@@ -247,7 +247,7 @@ function calculateResult() {
 function getRankings(comboKey) {
   const currentCodes = comboKey.split('');
   return Object.entries(RESULT_TYPES)
-    .filter(([key]) => key !== 'default')
+    .filter(([key]) => key !== 'default' && key !== comboKey)
     .map(([key, profile]) => {
       const codes = key.split('');
       let distance = 0;
