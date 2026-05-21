@@ -134,7 +134,10 @@ function renderQuestion() {
   </div>
   <div class="nav-buttons">
     ${currentQuestion > 0 ? '<button class="nav-btn prev" onclick="prevQuestion()">← 上一题</button>' : '<div></div>'}
-    <button class="nav-btn next" onclick="nextQuestion()" ${sel === undefined ? 'disabled' : ''}>${isLast ? '查看结果 🎉' : '下一题 →'}</button>
+    ${isLast
+      ? '<button class="nav-btn next" onclick="calculateResult()" ' + (sel === undefined ? 'disabled' : '') + '>查看结果 🎉</button>'
+      : '<div class="auto-hint">选择后自动跳转</div>'
+    }
   </div>
   <div class="swipe-hint" id="swipe-hint">← 左右滑动翻页 →</div>`;
 
@@ -147,6 +150,15 @@ function renderQuestion() {
 function selectOption(qid, oid) {
   answers[qid] = oid;
   renderQuestion();
+  // Auto-advance after selection (except last question)
+  const total = QUESTIONS.length;
+  const isLast = currentQuestion === total - 1;
+  if (!isLast) {
+    setTimeout(() => {
+      currentQuestion++;
+      renderQuestion();
+    }, 280);
+  }
 }
 
 function prevQuestion() {
@@ -490,11 +502,6 @@ function calcCombinationCount() {
 
 document.addEventListener('keydown', e => {
   if (!document.getElementById('page-test')?.classList.contains('active')) return;
-  if (e.key === 'Enter') {
-    const b = document.querySelector('.nav-btn.next:not(:disabled)');
-    if (b) b.click();
-  }
-  if (e.key === 'ArrowRight' || e.key === 'd') nextQuestion();
   if (e.key === 'ArrowLeft' || e.key === 'a') prevQuestion();
   if (['1', '2', '3', '4'].includes(e.key)) {
     const b = document.querySelectorAll('.option-btn');
