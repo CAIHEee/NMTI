@@ -225,7 +225,7 @@ function calculateResult() {
 
   const comboKey = vectorKey(axisSides);
   const primary = RESULT_TYPES[comboKey] || RESULT_TYPES.default;
-  const rankings = getRankings(comboKey);
+  const rankings = getRankings(comboKey, axisPercents);
 
   setTimeout(() => {
     loading.classList.add('hidden');
@@ -244,19 +244,33 @@ function calculateResult() {
   }, 800);
 }
 
-function getRankings(comboKey) {
+function getRankings(comboKey, axisPercents) {
   const currentCodes = comboKey.split('');
+  // 每个极性的理论中心：负极15%，正极85%
+  const CENTER = { negative: 15, positive: 85 };
+  const MAX_EUCLID = Math.sqrt(4 * 70 * 70); // 4轴 × 70² 最大距离
+
   return Object.entries(RESULT_TYPES)
     .filter(([key]) => key !== 'default' && key !== comboKey)
     .map(([key, profile]) => {
       const codes = key.split('');
-      let distance = 0;
+      let sumSq = 0;
+      let hamming = 0;
       for (let i = 0; i < codes.length; i++) {
-        if (codes[i] !== currentCodes[i]) distance++;
+        const axisKey = AXIS_ORDER[i];
+        const axis = AXES[axisKey];
+        const isPositive = codes[i] === axis.positive.code;
+        const typeCenter = isPositive ? CENTER.positive : CENTER.negative;
+        const actualPct = axisPercents[axisKey];
+        const axisDist = Math.abs(actualPct - typeCenter);
+        sumSq += axisDist * axisDist;
+        if (codes[i] !== currentCodes[i]) hamming++;
       }
-      return { ...profile, key, distance };
+      const euclid = Math.sqrt(sumSq);
+      const similarity = Math.max(0, Math.min(99, Math.round((1 - euclid / MAX_EUCLID) * 100)));
+      return { ...profile, key, similarity, hamming };
     })
-    .sort((a, b) => a.distance - b.distance || a.name.localeCompare(b.name))
+    .sort((a, b) => b.similarity - a.similarity)
     .slice(0, 3);
 }
 
@@ -359,7 +373,7 @@ function renderStoredResult() {
         <span class="rank-name" style="color:${t.color}">${t.name}</span>
         <span class="rank-slogan">${t.slogan}</span>
       </div>
-      <span class="rank-pct">${Math.max(0, 100 - t.distance * 22)}%</span>
+      <span class="rank-pct">${t.similarity}%</span>
     </div>
   `).join('');
 
