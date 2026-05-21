@@ -244,7 +244,7 @@ body {
   max-height: calc(var(--type-card-row) * 2 + var(--type-card-gap));
 }
 .types-drawer.is-expanded {
-  max-height: 1600px;
+  max-height: 3200px;
 }
 .types-drawer-actions {
   display: flex;
@@ -826,6 +826,8 @@ canvas#radarChart { max-width: 100%; height: auto; }
   .types-drawer {
     --type-card-row: 288px;
     --type-card-gap: 8px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
   .types-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
   .method-grid { grid-template-columns: 1fr; }
