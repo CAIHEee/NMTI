@@ -182,8 +182,19 @@ function scoreToSide(axis, score) {
   return score >= 0 ? axis.positive : axis.negative;
 }
 
-function normalizeScore(score) {
-  const max = 6; // 3 positive picks at +2
+function getAxisMax(axisKey) {
+  let max = 0;
+  QUESTIONS.forEach(q => {
+    if (q.axis === axisKey) {
+      q.options.forEach(o => { if (Math.abs(o.score) > max) max = Math.abs(o.score); });
+    }
+  });
+  const count = QUESTIONS.filter(q => q.axis === axisKey).length;
+  return count * max;
+}
+
+function normalizeScore(score, axisKey) {
+  const max = axisKey ? getAxisMax(axisKey) : 6;
   return Math.max(0, Math.min(100, Math.round(((score + max) / (max * 2)) * 100)));
 }
 
@@ -209,7 +220,7 @@ function calculateResult() {
   AXIS_ORDER.forEach(axisKey => {
     const axis = AXES[axisKey];
     axisSides[axisKey] = scoreToSide(axis, axisScores[axisKey]);
-    axisPercents[axisKey] = normalizeScore(axisScores[axisKey]);
+    axisPercents[axisKey] = normalizeScore(axisScores[axisKey], axisKey);
   });
 
   const comboKey = vectorKey(axisSides);
