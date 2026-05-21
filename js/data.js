@@ -293,7 +293,7 @@ const RESULT_TYPES = {
     compatibility: { best: ['JGXZ', 'JYXZ'], challenging: ['TGXK'] },
   },
   JGXK: {
-    key: 'JGXK', name: '清醒救火队长', emoji: '🧯', color: '#dc2626',
+    key: 'JGXK', name: '清醒救火人', emoji: '🧯', color: '#dc2626',
     slogan: '我知道这是坑，但火总得有人灭。',
     summary: '高投入、强落地、现实清醒，且常常先接住局面。',
     desc: '你是团队里最清醒的人之一——你知道哪些承诺是空话，哪些项目大概率会烂尾，哪些人只是在做表面功夫。但即使看得这么透，你依然会在关键时刻站出来。不是因为你被骗了，而是因为你对事情本身有责任感。这种"清醒地燃烧"让你承受着双重压力：既要处理问题，又要消化看穿一切后的无力感。',
@@ -337,7 +337,7 @@ const RESULT_TYPES = {
     compatibility: { best: ['JGBK', 'JGXK'], challenging: ['TYBK'] },
   },
   JYBK: {
-    key: 'JYBK', name: '暗线苦劳人', emoji: '🕯️', color: '#f59e0b',
+    key: 'JYBK', name: '暗线承重者', emoji: '🕯️', color: '#f59e0b',
     slogan: '表面低调，背后全是我在补。',
     summary: '高投入、低耗生存、愿意相信，且倾向默默扛事。',
     desc: '你是团队中最容易被忽视的支柱。你不太会主动展示自己做了什么，但每次关键时刻你会发现——那些"自动完成"的稳定运行、那些"没人做但做了"的补丁，背后都是你在撑。你相信组织会公平对待每个人，所以你选择先把事情做好而不是先邀功。但这种"等别人看见"的心态，正在让你和那些善于表达的同事拉开差距。',
@@ -359,7 +359,7 @@ const RESULT_TYPES = {
     compatibility: { best: ['TGXK', 'JYXK'], challenging: ['JGBZ'] },
   },
   JYBZ: {
-    key: 'JYBZ', name: '气氛冲锋鱼', emoji: '🐟', color: '#06b6d4',
+    key: 'JYBZ', name: '灵动冲锋者', emoji: '🐟', color: '#06b6d4',
     slogan: '能摸也能冲，主要看值不值得。',
     summary: '高投入、会保存能量、愿意相信，同时表达活跃。',
     desc: '你是最灵活的职场生物——知道什么时候该全力冲刺，什么时候该安静等待。你会被好故事调动，但不会完全失去自我保护；你能带气氛，也能把不满说出来。这种弹性让你在不同环境下都能生存得不错，但也可能让你在需要深度投入时显得不够"allin"。你的表达方式偏轻松幽默，善于用玩笑化解尴尬，这让同事愿意和你合作。',
@@ -425,7 +425,7 @@ const RESULT_TYPES = {
     compatibility: { best: ['JGXZ', 'JGBZ'], challenging: ['TYBK'] },
   },
   TGBK: {
-    key: 'TGBK', name: '温吞工具人', emoji: '🧰', color: '#a16207',
+    key: 'TGBK', name: '温吞执行者', emoji: '🧰', color: '#a16207',
     slogan: '我不想卷，但活还是会做完。',
     summary: '重边界、强落地、愿意相信，且倾向接住局面。',
     desc: '你是那种"不出彩但绝不掉链子"的人。你不追求高光时刻，但很可靠——交给你的事，你一定会按质按量完成。别人可能觉得你温和好说话，于是把不少琐碎和补位工作放到你这里。你对未来还有期待，也愿意在组织里稳定发展。但这种"温吞"的节奏正在让你错过一些需要主动争取的机会。',
@@ -447,7 +447,7 @@ const RESULT_TYPES = {
     compatibility: { best: ['TGXZ', 'TGBZ'], challenging: ['JGBZ'] },
   },
   TGBZ: {
-    key: 'TGBZ', name: '佛系协调员', emoji: '🤝', color: '#22c55e',
+    key: 'TGBZ', name: '和风协调者', emoji: '🤝', color: '#22c55e',
     slogan: '能做好，也能好好说。',
     summary: '重边界、强落地、愿意相信，同时表达较开放。',
     desc: '你是团队里最让人舒服的合作者。你不爱卷，但愿意把事情协调顺；你对未来保留善意，也能用比较舒服的方式把问题说出来。你的表达风格是温和但坚定的，既不会让人感到压力，也不会让问题被忽视。这种特质让你在跨部门协作中特别有价值，但也可能因为太"好说话"而被低估。',
@@ -469,7 +469,7 @@ const RESULT_TYPES = {
     compatibility: { best: ['TGBK', 'TGXZ'], challenging: ['JYXZ'] },
   },
   TGXK: {
-    key: 'TGXK', name: '静默补位者', emoji: '🪨', color: '#475569',
+    key: 'TGXK', name: '沉默基石者', emoji: '🪨', color: '#475569',
     slogan: '不争不抢，但该补的我会补。',
     summary: '重边界、强落地、现实清醒，且多半安静承受。',
     desc: '你不太相信大饼，也不想成为焦点，但事情真没人做时，你还是会安静补上。你的存在感不高，可靠度很高。你清楚职场的规则，也知道自己不该被过度消耗——但你的"不该"总是让步于"算了还是我来吧"。这种安静的可靠正在成为一种隐形负担。',
@@ -491,7 +491,7 @@ const RESULT_TYPES = {
     compatibility: { best: ['JYBK', 'JYXK'], challenging: ['JGBZ'] },
   },
   TGXZ: {
-    key: 'TGXZ', name: '边界维护员', emoji: '🛡️', color: '#2563eb',
+    key: 'TGXZ', name: '铁壁守界人', emoji: '🛡️', color: '#2563eb',
     slogan: '做好我的事，也守住我的线。',
     summary: '重边界、强落地、现实清醒，且会表达边界。',
     desc: '你是成熟的职场稳定器：该做的做清楚，不该背的也会讲清楚。你不靠热血工作，靠规则和质量工作。你对职场的期待很朴素——给合理的钱，做合理的事，谈合理的条件。你的边界感是你的护城河，也是你的专业标签。',
@@ -513,7 +513,7 @@ const RESULT_TYPES = {
     compatibility: { best: ['JGXZ', 'TGXK'], challenging: ['TYBZ'] },
   },
   TYBK: {
-    key: 'TYBK', name: '低耗许愿家', emoji: '🌙', color: '#14b8a6',
+    key: 'TYBK', name: '星夜守望者', emoji: '🌙', color: '#14b8a6',
     slogan: '希望会好，但我先省点电。',
     summary: '重边界、低耗生存、愿意相信，且习惯先忍让。',
     desc: '你对未来还有期待，但不会为了期待无限燃烧。你更喜欢低消耗地待在系统里，能过就过，能少冲就少冲。你的策略是"先保住自己，等待更好的时机"。你相信事情会变好，但不会把自己全部押上。这种心态让你在高压环境中生存得更久，但也可能让你在该出手时犹豫不决。',
@@ -535,7 +535,7 @@ const RESULT_TYPES = {
     compatibility: { best: ['TGBK', 'TYBZ'], challenging: ['JGXZ'] },
   },
   TYBZ: {
-    key: 'TYBZ', name: '快乐画饼鱼', emoji: '🎈', color: '#ec4899',
+    key: 'TYBZ', name: '浮光追梦人', emoji: '🎈', color: '#ec4899',
     slogan: '先快乐一点，明天也许会好。',
     summary: '重边界、低耗生存、愿意相信，且表达轻快。',
     desc: '你擅长用轻松感对抗职场压力。你相信事情可能变好，但不会把自己全部押上；吐槽和玩笑是你的自救方式。你的快乐不是装出来的，而是一种策略——用积极的心态让难熬的日子好过一点。但这种"快乐"有时候也会让你回避真正需要面对的问题。',
@@ -557,7 +557,7 @@ const RESULT_TYPES = {
     compatibility: { best: ['TYBK', 'TGBZ'], challenging: ['JGXK'] },
   },
   TYXK: {
-    key: 'TYXK', name: '人间清醒韭', emoji: '🌱', color: '#10b981',
+    key: 'TYXK', name: '清醒独行者', emoji: '🌱', color: '#10b981',
     slogan: '看透了，先活着。',
     summary: '重边界、低耗生存、现实清醒，且偏向隐忍。',
     desc: '你很清楚职场规则，也知道自己不该被过度消耗。只是很多时候你选择先保全自己，低调穿过周期。你看透了组织的运作逻辑，也接受了"不是所有努力都有回报"的现实。你的策略是"先活着"——不做出头鸟，不做替罪羊，低调但清醒地在系统中穿行。这种清醒让你避免了很多坑，但也可能让你变得过于保守。',
@@ -579,7 +579,7 @@ const RESULT_TYPES = {
     compatibility: { best: ['TYXZ', 'TGXK'], challenging: ['JGBZ'] },
   },
   TYXZ: {
-    key: 'TYXZ', name: '终极躺平嘴替', emoji: '🛋️', color: '#7c3aed',
+    key: 'TYXZ', name: '觉醒破壁者', emoji: '🛋️', color: '#7c3aed',
     slogan: '我不卷，也不装没看见。',
     summary: '重边界、低耗生存、现实清醒，且敢于表达。',
     desc: '你已经把职场看得很透：不无效燃烧，不替话术买单，也不轻易沉默。你的躺平不是放弃，而是把主动权拿回自己手里。你知道哪些规则是必须遵守的，哪些只是"约定俗成"的——对于后者，你会选择无视或者挑战。你的表达不是为了攻击，而是为了让更多人看到真实的职场生态。',
@@ -601,7 +601,7 @@ const RESULT_TYPES = {
     compatibility: { best: ['TYXK', 'JYXZ'], challenging: ['TGBK'] },
   },
   default: {
-    key: 'default', name: '混合型牛马', emoji: '🐴', color: '#f59e0b',
+    key: 'default', name: '万象归一者', emoji: '🐴', color: '#f59e0b',
     slogan: '今天的我，也很复杂。',
     summary: '四轴结果接近中间值。',
     desc: '你的答案呈现出较强的混合特征，不太能被单一路径概括。这意味着你可能在不同场景下表现出截然不同的风格——有时像卷王，有时像躺平大师。这不是矛盾，而是一种适应能力：你根据环境和需求调整自己的投入和表达方式。但混合也意味着你需要更清晰地了解自己真正想要什么。',
