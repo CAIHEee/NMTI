@@ -267,6 +267,63 @@ function renderStoredResult() {
   document.getElementById('result-advice').innerHTML = `
     <div class="advice-box">💡 职场画像：${primary.profile}</div>
   `;
+  // --- Workplace scenarios ---
+  const wpEl = document.getElementById('result-workplace');
+  if (wpEl && primary.workplace) {
+    const wp = primary.workplace;
+    wpEl.innerHTML = `<h3>🏢 职场行为模式</h3>` +
+      (wp.title ? `<div class="workplace-title">${wp.title}</div>` : '') +
+      `<ul class="workplace-list">` +
+      (wp.scenarios || []).map(s =>
+        `<li class="workplace-item">
+          <span class="workplace-situation">${s.situation}</span>
+          <span class="workplace-behavior">${s.behavior}</span>
+        </li>`
+      ).join('') +
+      `</ul>`;
+  }
+
+  // --- Strengths & Weaknesses ---
+  const pcEl = document.getElementById('result-pros-cons');
+  if (pcEl && (primary.strengths || primary.weaknesses)) {
+    const strengths = (primary.strengths || []).map(s => `<li>${s}</li>`).join('');
+    const weaknesses = (primary.weaknesses || []).map(w => `<li>${w}</li>`).join('');
+    pcEl.innerHTML = `<h3>⚖️ 优势与短板</h3>` +
+      `<div class="pros-cons-grid">` +
+      `<div class="pros-section"><h4>✅ 优势</h4><ul class="pros-list">${strengths || '<li>暂无数据</li>'}</ul></div>` +
+      `<div class="cons-section"><h4>⚠️ 短板</h4><ul class="cons-list">${weaknesses || '<li>暂无数据</li>'}</ul></div>` +
+      `</div>`;
+  }
+
+  // --- Growth tips ---
+  const gEl = document.getElementById('result-growth');
+  if (gEl && primary.growthTips) {
+    gEl.innerHTML = `<h3>🌱 成长建议</h3>` +
+      `<ul class="growth-list">` +
+      primary.growthTips.map(t => `<li>${t}</li>`).join('') +
+      `</ul>`;
+  }
+
+  // --- Compatibility ---
+  const cEl = document.getElementById('result-compat');
+  if (cEl && primary.compatibility) {
+    const comp = primary.compatibility;
+    const best = (comp.best || []).map(code => {
+      const t = RESULT_TYPES[code];
+      const name = t ? t.name : code;
+      return `<span class="compat-badge compat-best" style="background:${t ? t.color : '#22c55e'}">${name}</span>`;
+    }).join('');
+    const challenging = (comp.challenging || []).map(code => {
+      const t = RESULT_TYPES[code];
+      const name = t ? t.name : code;
+      return `<span class="compat-badge compat-challenging" style="background:${t ? t.color : '#ef4444'}">${name}</span>`;
+    }).join('');
+    cEl.innerHTML = `<h3>🤝 职场兼容性</h3>` +
+      `<div class="compat-section">` +
+      `<div class="compat-group"><h4>💚 最佳搭档</h4><div class="compat-badges">${best || '<span class="compat-placeholder">暂无数据</span>'}</div></div>` +
+      `<div class="compat-group"><h4>🔴 需要磨合</h4><div class="compat-badges">${challenging || '<span class="compat-placeholder">暂无数据</span>'}</div></div>` +
+      `</div>`;
+  }
 
   renderAxisBars(axisSides, axisScores, axisPercents);
   renderRadarChart(axisPercents, primary.color);

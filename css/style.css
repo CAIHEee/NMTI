@@ -670,6 +670,150 @@ canvas#radarChart { max-width: 100%; height: auto; }
 }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+/* ============================================
+   Workplace / Pros-Cons / Growth / Compatibility
+   ============================================ */
+
+.workplace-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-dim);
+  margin-bottom: 12px;
+}
+
+.workplace-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.workplace-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+}
+.workplace-situation {
+  display: inline-block;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--accent);
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
+  align-self: flex-start;
+  margin-bottom: 2px;
+}
+.workplace-behavior {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-dim);
+}
+
+.pros-cons-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.pros-section h4,
+.cons-section h4 {
+  font-size: 15px;
+  font-weight: 800;
+  margin-bottom: 10px;
+}
+.pros-section h4 { color: #22c55e; }
+.cons-section h4 { color: #ef4444; }
+
+.pros-list,
+.cons-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.pros-list li,
+.cons-list li {
+  font-size: 14px;
+  line-height: 1.5;
+  padding: 8px 12px;
+  border-radius: 10px;
+  color: var(--text);
+}
+.pros-list li {
+  background: color-mix(in srgb, #22c55e 8%, transparent);
+  border-left: 3px solid #22c55e;
+}
+.cons-list li {
+  background: color-mix(in srgb, #ef4444 8%, transparent);
+  border-left: 3px solid #ef4444;
+}
+
+.growth-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.growth-list li {
+  font-size: 14px;
+  line-height: 1.6;
+  padding: 10px 14px;
+  border-radius: 10px;
+  color: var(--text);
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  position: relative;
+  padding-left: 32px;
+}
+.growth-list li::before {
+  content: '💡';
+  position: absolute;
+  left: 10px;
+  top: 10px;
+  font-size: 13px;
+}
+
+.compat-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.compat-group h4 {
+  font-size: 15px;
+  font-weight: 800;
+  margin-bottom: 10px;
+}
+.compat-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.compat-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+.compat-placeholder {
+  font-size: 13px;
+  color: var(--text-dim);
+  font-style: italic;
+}
+
 @media (max-width: 480px) {
   #theme-toggle { top: 12px; right: 12px; width: 40px; height: 40px; }
   .landing { padding: 56px 14px 32px; }
@@ -703,6 +847,9 @@ canvas#radarChart { max-width: 100%; height: auto; }
   .rank-image { width: 38px; height: 52px; }
   .result-actions { display: grid; grid-template-columns: 1fr 1fr; }
   .share-btn { padding-left: 12px; padding-right: 12px; }
+  .pros-cons-grid { grid-template-columns: 1fr; gap: 12px; }
+  .workplace-item { padding: 10px 12px; }
+  .growth-list li { padding-left: 28px; font-size: 13px; }
 }
 
 @media (min-width: 481px) and (max-width: 768px) {
