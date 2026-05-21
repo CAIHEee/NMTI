@@ -1,0 +1,98 @@
+[
+  {
+    "code": "JGBK",
+    "title": "燃尽合伙人",
+    "file": "NMTI/img/generated/roles/JGBK.png",
+    "status": "ok"
+  },
+  {
+    "code": "JGBZ",
+    "title": "画饼冲锋官",
+    "file": "NMTI/img/generated/roles/JGBZ.png",
+    "status": "ok"
+  },
+  {
+    "code": "JGXK",
+    "title": "清醒救火队长",
+    "file": "NMTI/img/generated/roles/JGXK.png",
+    "status": "ok"
+  },
+  {
+    "code": "JGXZ",
+    "title": "边界推进官",
+    "file": "NMTI/img/generated/roles/JGXZ.png",
+    "status": "ok"
+  },
+  {
+    "code": "JYBK",
+    "title": "暗线苦劳人",
+    "file": "NMTI/img/generated/roles/JYBK.png",
+    "status": "ok"
+  },
+  {
+    "code": "JYBZ",
+    "title": "气氛冲锋鱼",
+    "file": "NMTI/img/generated/roles/JYBZ.png",
+    "status": "ok"
+  },
+  {
+    "code": "JYXK",
+    "title": "隐忍拆弹师",
+    "file": "NMTI/img/generated/roles/JYXK.png",
+    "status": "ok"
+  },
+  {
+    "code": "JYXZ",
+    "title": "反卷策略家",
+    "file": "NMTI/img/generated/roles/JYXZ.png",
+    "status": "ok"
+  },
+  {
+    "code": "TGBK",
+    "title": "温吞工具人",
+    "file": "NMTI/img/generated/roles/TGBK.png",
+    "status": "ok"
+  },
+  {
+    "code": "TGBZ",
+    "title": "佛系协调员",
+    "file": "NMTI/img/generated/roles/TGBZ.png",
+    "status": "ok"
+  },
+  {
+    "code": "TGXK",
+    "title": "静默补位者",
+    "file": "NMTI/img/generated/roles/TGXK.png",
+    "status": "ok"
+  },
+  {
+    "code": "TGXZ",
+    "title": "边界维护员",
+    "file": "NMTI/img/generated/roles/TGXZ.png",
+    "status": "ok"
+  },
+  {
+    "code": "TYBK",
+    "title": "低耗许愿家",
+    "file": "NMTI/img/generated/roles/TYBK.png",
+    "status": "ok"
+  },
+  {
+    "code": "TYBZ",
+    "title": "快乐画饼鱼",
+    "file": "NMTI/img/generated/roles/TYBZ.png",
+    "status": "ok"
+  },
+  {
+    "code": "TYXK",
+    "title": "人间清醒韭",
+    "file": "NMTI/img/generated/roles/TYXK.png",
+    "status": "ok"
+  },
+  {
+    "code": "TYXZ",
+    "title": "终极躺平嘴替",
+    "file": "NMTI/img/generated/roles/TYXZ.png",
+    "status": "ok"
+  }
+]

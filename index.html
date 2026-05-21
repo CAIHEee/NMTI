@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>NMTI 4轴组合版 | NiuMa Type Indicator</title>
+  <meta name="description" content="NMTI 4轴组合版：投入、生存、信念、表达四轴组合出16种牛马人格。">
+  <meta name="theme-color" content="#0d0f12" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#f6f7f9" media="(prefers-color-scheme: light)">
+  <meta property="og:title" content="NMTI 4轴组合版">
+  <meta property="og:description" content="4轴组合，16种人格，30道题找到你的牛马人格。">
+  <meta property="og:type" content="website">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <button id="theme-toggle" onclick="toggleTheme()" aria-label="切换主题">☀️</button>
+
+  <div id="loading" class="loading-overlay hidden">
+    <div class="loading-spinner">🐴</div>
+    <div class="loading-text">正在生成你的四轴人格...</div>
+    <div class="loading-dots"><span></span><span></span><span></span></div>
+  </div>
+
+  <div id="page-landing" class="page active landing">
+    <main class="landing-shell">
+      <section class="landing-hero" aria-labelledby="landing-title">
+        <div class="hero-copy">
+          <div class="landing-icon">🐴</div>
+          <div class="hero-kicker">NMTI · 4 Axis Combination</div>
+          <h1 id="landing-title">牛马类型指标</h1>
+          <!-- <div class="subtitle">从单一维度升级为四轴组合，得到更完整、更像 MBTI 的人格结果。</div> -->
+          <div class="tagline">4轴 / 16型 / 30题</div>
+          <div class="hero-actions">
+            <button class="btn-primary" onclick="startTest()">开始测试</button>
+            <button class="btn-secondary" onclick="scrollToTypes()">查看类型</button>
+          </div>
+          <div class="stats-row">
+            <div class="stat-item"><div class="stat-num">4</div><div class="stat-label">评测轴</div></div>
+            <div class="stat-item"><div class="stat-num">16</div><div class="stat-label">人格组合</div></div>
+            <div class="stat-item"><div class="stat-num">30</div><div class="stat-label">情境题</div></div>
+            <div class="stat-item"><div class="stat-num">3min</div><div class="stat-label">约用时</div></div>
+          </div>
+        </div>
+        <div class="hero-side">
+          <div class="hero-side-head">
+            <h2>测试说明</h2>
+            <p class="section-desc">四个轴分别衡量投入、生存、信念和表达风格。</p>
+          </div>
+          <div class="method-grid">
+            <div class="info-card">
+              <h3>四个轴</h3>
+              <p><strong>投入轴</strong> — 卷型 / 躺型</p>
+              <p><strong>生存轴</strong> — 工型 / 鱼型</p>
+              <p><strong>信念轴</strong> — 饼型 / 醒型</p>
+              <p><strong>表达轴</strong> — 锅型 / 嘴型</p>
+            </div>
+            <div class="info-card">
+              <h3>评测机制</h3>
+              <p>📝 30道情境题</p>
+              <p>📊 每题 4 个选项，正负权重分明</p>
+              <p>🎯 四轴组合出 16 种人格</p>
+              <p>💡 相近人格 Top3 自动排序</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="gallery-section">
+        <h2>16种组合人格</h2>
+        <p class="section-desc">每个结果由四个轴一起决定，不再只看单一维度。</p>
+        <div id="types-drawer" class="types-drawer is-collapsed">
+          <div id="types-grid" class="types-grid"></div>
+        </div>
+        <div class="types-drawer-actions">
+          <button id="types-toggle" class="drawer-toggle" type="button" onclick="toggleTypesDrawer()" aria-expanded="false">
+            展开 ▾
+          </button>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <div id="page-test" class="page test-page">
+    <div class="page-topbar">
+      <button type="button" class="topbar-btn" onclick="goHome()">主页</button>
+      <div class="topbar-title">
+        <strong>答题页面</strong>
+        <span>选择更像你的反应</span>
+      </div>
+    </div>
+    <div class="progress-bar">
+      <div id="progress-fill" class="progress-fill" style="width:0%"></div>
+    </div>
+    <div id="progress-text" class="progress-text"></div>
+    <div id="test-content"></div>
+  </div>
+
+  <div id="page-result" class="page result-page">
+    <div class="page-topbar">
+      <button type="button" class="topbar-btn" onclick="goHome()">主页</button>
+      <div class="topbar-title">
+        <strong>评估页面</strong>
+        <span>四轴组合结果</span>
+      </div>
+    </div>
+    <div id="result-hero" class="result-hero"></div>
+    <div id="result-desc" class="result-card"><h3>📝 人格画像</h3></div>
+    <div id="result-advice" class="result-card"><h3>💡 职场画像</h3></div>
+    <div class="result-grid">
+      <div class="result-card">
+        <h3>📊 四轴雷达图</h3>
+        <div class="radar-container"><canvas id="radarChart"></canvas></div>
+      </div>
+      <div class="result-card">
+        <h3>📈 四轴详情</h3>
+        <div id="dimension-bars"></div>
+      </div>
+    </div>
+    <div class="result-card">
+      <h3>🏆 相近人格 Top3</h3>
+      <div id="combo-type"></div>
+    </div>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
