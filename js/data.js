@@ -324,7 +324,7 @@ const RESULT_TYPES = {
     compatibility: { best: ['JGXZ', 'TGXZ'], challenging: ['TYBZ'] },
   },
   JGXZ: {
-    key: 'JGXZ', name: '硬骨', emoji: '📌', color: '#8b5cf6',
+    key: 'JGXZ', name: '硬骨', emoji: '📌', color: '#9333ea',
     slogan: '事情要做，边界也要谈。',
     summary: '高投入、强落地、现实判断强，且表达边界清楚。',
     desc: '你是职场中难得的"既能干又能说"型选手。你既能推进结果，也不会轻易接受模糊责任。你相信专业推动，而不是靠感动加班。你的表达不是抱怨而是谈判——你清楚地知道自己的价值在哪里，也知道什么条件才能让事情做好。这种特质让你在复杂项目中特别高效，但也可能让一些习惯"画饼管理"的领导感到不舒服。',

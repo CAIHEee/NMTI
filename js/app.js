@@ -443,8 +443,9 @@ function inkFor(hex, bg, min = 4.5) {
 }
 
 // 主题无关地提供两套文字色，由 CSS 按当前主题挑选
+// 亮色下的最差底色是 result-hero 的浅灰渐变（约 #eef1f5），按它算才在卡片与 hero 上都达标
 function typeInkVars(color) {
-  return `--ink-dark:${inkFor(color, '#181c22')};--ink-light:${inkFor(color, '#ffffff')}`;
+  return `--ink-dark:${inkFor(color, '#181c22')};--ink-light:${inkFor(color, '#eef1f5')}`;
 }
 
 function compatCardHtml(type) {
