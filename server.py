@@ -12,6 +12,7 @@ class NoCacheHandler(http.server.SimpleHTTPRequestHandler):
 
 if __name__ == '__main__':
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
-    server = http.server.HTTPServer(('0.0.0.0', 9527), NoCacheHandler)
+    # 多线程：并发请求图片时不会相互阻塞
+    server = http.server.ThreadingHTTPServer(('0.0.0.0', 9527), NoCacheHandler)
     print("Serving on http://0.0.0.0:9527 (no-cache)")
     server.serve_forever()

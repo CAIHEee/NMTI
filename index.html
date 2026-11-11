@@ -25,7 +25,7 @@
       document.documentElement.setAttribute('data-theme', t);
     })();
   </script>
-  <link rel="stylesheet" href="css/style.css?v=1779377062">
+  <link rel="stylesheet" href="css/style.css?v=1794381960">
 </head>
 <body>
   <button id="theme-toggle" onclick="toggleTheme()" aria-label="切换主题">
@@ -33,7 +33,7 @@
     <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.6v2.2M12 19.2v2.2M4.2 12H2M22 12h-2.2M5.6 5.6l1.6 1.6M16.8 16.8l1.6 1.6M18.4 5.6l-1.6 1.6M7.2 16.8l-1.6 1.6"/></svg>
   </button>
 
-  <div id="loading" class="loading-overlay hidden">
+  <div id="loading" class="loading-overlay hidden" role="status" aria-live="polite">
     <div class="loading-spinner"><img src="img/raw.webp" alt="" style="width:60px;height:60px;border-radius:50%;object-fit:cover;"></div>
     <div class="loading-text">正在生成你的四轴人格...</div>
     <div class="loading-dots"><span></span><span></span><span></span></div>
@@ -119,6 +119,16 @@
     <div id="test-content"></div>
   </div>
 
+  <div id="page-type" class="page result-page">
+    <div class="page-topbar">
+      <button type="button" class="topbar-btn" onclick="goHome()">主页</button>
+      <div class="topbar-title">
+        <strong>人格详情</strong>
+      </div>
+    </div>
+    <div id="type-detail"></div>
+  </div>
+
   <div id="page-result" class="page result-page">
     <div class="page-topbar">
       <button type="button" class="topbar-btn" onclick="goHome()">主页</button>
@@ -137,7 +147,7 @@
     <div class="result-grid">
       <div class="result-card">
         <h3>📊 四轴雷达图</h3>
-        <div class="radar-container"><canvas id="radarChart"></canvas></div>
+        <div class="radar-container"><canvas id="radarChart" role="img" aria-label="四轴雷达图"></canvas></div>
       </div>
       <div class="result-card">
         <h3>📈 四轴详情</h3>
@@ -150,7 +160,7 @@
     </div>
   </div>
 
-  <script src="js/data.js?v=1779377062"></script>
-  <script src="js/app.js?v=1779377062"></script>
+  <script src="js/data.js?v=1794381960"></script>
+  <script src="js/app.js?v=1794381960"></script>
 </body>
 </html>

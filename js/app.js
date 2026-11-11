@@ -8,6 +8,9 @@ let lastResult = null;
 let appBooted = false;
 let typesDrawerExpanded = false;
 let advanceTimer = null;
+let renderedQuestionId = null;
+const BASE_TITLE = 'NMTI 牛马人格测试';
+const prefersReducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 function clearAdvance() {
   if (advanceTimer) {
@@ -62,16 +65,27 @@ function initSwipe() {
 function showPage(name) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById(`page-${name}`)?.classList.add('active');
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  window.scrollTo({ top: 0, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
   const tb = document.getElementById('theme-toggle');
   if (tb) tb.style.display = name === 'test' ? 'none' : '';
+  if (name !== 'type') document.title = BASE_TITLE;
   if (name === 'landing') requestAnimationFrame(measureDrawerHeight);
 }
 
 function getRoute() {
-  const route = location.hash.replace(/^#\/?/, '');
+  const route = location.hash.replace(/^#\/?/, '').replace(/\/$/, '');
   if (route === 'test' || route === 'result') return route;
+  if (/^type\/[A-Za-z]{4}$/.test(route)) return 'type';
   return 'landing';
+}
+
+function getRouteTypeCode() {
+  const match = location.hash.replace(/\/$/, '').match(/#\/?type\/([A-Za-z]{4})$/);
+  return match ? match[1].toUpperCase() : '';
+}
+
+function isKnownType(code) {
+  return /^[A-Z]{4}$/.test(code) && Object.prototype.hasOwnProperty.call(RESULT_TYPES, code) && code !== 'default';
 }
 
 function navigateTo(route) {
@@ -80,9 +94,38 @@ function navigateTo(route) {
   else location.hash = target;
 }
 
+// 非法路由用 replace，避免把错误地址压进历史导致后退来回跳
+function replaceRoute(target) {
+  try {
+    history.replaceState(null, '', `${location.pathname}${location.search}${target}`);
+    handleRoute();
+  } catch (_) {
+    location.hash = target;
+  }
+}
+
+function openType(code) {
+  if (!isKnownType(code)) return;
+  const target = `#/type/${code}`;
+  if (location.hash === target) handleRoute();
+  else location.hash = target;
+}
+
 function handleRoute() {
   clearAdvance();
   const route = getRoute();
+
+  if (route === 'type') {
+    const code = getRouteTypeCode();
+    if (!isKnownType(code)) {
+      replaceRoute('#/');
+      return;
+    }
+    showPage('type');
+    renderTypePage(code);
+    return;
+  }
+
   if (route === 'test') {
     showPage('test');
     renderQuestion();
@@ -97,7 +140,7 @@ function handleRoute() {
       } catch (_) {}
     }
     if (!lastResult) {
-      navigateTo('landing');
+      replaceRoute('#/');
       return;
     }
     showPage('result');
@@ -114,7 +157,10 @@ function goHome() {
 
 function scrollToTypes() {
   navigateTo('landing');
-  setTimeout(() => document.getElementById('types-grid')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+  setTimeout(() => document.getElementById('types-grid')?.scrollIntoView({
+    behavior: prefersReducedMotion() ? 'auto' : 'smooth',
+    block: 'start',
+  }), 50);
 }
 
 function startTest() {
@@ -122,6 +168,8 @@ function startTest() {
   currentQuestion = 0;
   answers = {};
   lastResult = null;
+  renderedQuestionId = null;
+  try { sessionStorage.removeItem('nmti-last-result'); } catch (_) {}
   navigateTo('test');
 }
 
@@ -146,7 +194,11 @@ function renderQuestion() {
       ? `<div class="nav-inline"><button class="nav-back" onclick="prevQuestion()">← 上一题</button></div>`
       : '');
 
-  const html = `<div class="question-card">
+  // 只有真正换题才播放入场动画，选中答案时的重绘不重播
+  const isNewQuestion = renderedQuestionId !== q.id;
+  renderedQuestionId = q.id;
+
+  const html = `<div class="question-card${isNewQuestion ? ' is-new' : ''}">
     <div class="question-text">${q.text}</div>
     <div class="options">
       ${q.options.map((o, i) => `
@@ -214,9 +266,16 @@ function getAxisMax(axisKey) {
   return count * max;
 }
 
+// 理论极值归一化后，真实作答几乎不会全选同一极：
+// 实测 3 万次随机作答，各轴百分比集中在 25%~75%（p5=28, p95=72）。
+// 直接展示会让雷达图都接近正圆、数值像没测出东西，因此对偏差做增益放大。
+const SCORE_GAIN = 1.7;
+
 function normalizeScore(score, axisKey) {
   const max = axisKey ? getAxisMax(axisKey) : 6;
-  return Math.max(0, Math.min(100, Math.round(((score + max) / (max * 2)) * 100)));
+  const raw = ((score + max) / (max * 2)) * 100;
+  const gained = 50 + (raw - 50) * SCORE_GAIN;
+  return Math.max(2, Math.min(98, Math.round(gained)));
 }
 
 function vectorKey(sides) {
@@ -225,7 +284,7 @@ function vectorKey(sides) {
 
 function calculateResult() {
   const loading = document.getElementById('loading');
-  loading.classList.remove('hidden');
+  loading.classList.remove('hidden', 'is-hiding');
 
   const axisScores = {};
   AXIS_ORDER.forEach(axis => axisScores[axis] = 0);
@@ -249,7 +308,7 @@ function calculateResult() {
   const rankings = getRankings(comboKey, axisPercents);
 
   setTimeout(() => {
-    loading.classList.add('hidden');
+    loading.classList.add('is-hiding');
     lastResult = {
       primary,
       rankings,
@@ -262,14 +321,15 @@ function calculateResult() {
       sessionStorage.setItem('nmti-last-result', JSON.stringify(lastResult));
     } catch (_) {}
     navigateTo('result');
-  }, 800);
+    setTimeout(() => loading.classList.add('hidden'), 280);
+  }, 720);
 }
 
 function getRankings(comboKey, axisPercents) {
   const currentCodes = comboKey.split('');
-  // 每个极性的理论中心：负极15%，正极85%
-  const CENTER = { negative: 15, positive: 85 };
-  const MAX_AXIS_DIST = 70; // 单个轴离理论中心的最远距离
+  // 理论中心取增益后的极值；MAX 与增益后的实际最远距离一致，保证 |pct-中心| 单调
+  const CENTER = { negative: 2, positive: 98 };
+  const MAX_AXIS_DIST = 96;
 
   return Object.entries(RESULT_TYPES)
     .filter(([key]) => key !== 'default' && key !== comboKey)
@@ -293,9 +353,121 @@ function getRankings(comboKey, axisPercents) {
     .slice(0, 3);
 }
 
+// ============================================
+// 可复用区块：结果页与人格详情页共用
+// ============================================
+function profileCardHtml(type) {
+  return `<h3>📝 人格画像</h3>
+    <div class="result-desc">${type.desc}</div>
+    <div class="trait-tags">${(type.traits || []).map(t => `<span class="trait-tag">${t}</span>`).join('')}</div>
+    <div class="profile-block">
+      <div class="profile-lead">${type.profile}</div>
+      <div class="profile-advice">${type.advice}</div>
+    </div>`;
+}
+
+function workplaceCardHtml(type) {
+  const wp = type.workplace;
+  if (!wp) return '';
+  return `<h3>🏢 职场行为模式</h3>` +
+    (wp.title ? `<div class="workplace-title">${wp.title}</div>` : '') +
+    `<ul class="workplace-list">` +
+    (wp.scenarios || []).map(s =>
+      `<li class="workplace-item">
+        <span class="workplace-situation">${s.situation}</span>
+        <span class="workplace-behavior">${s.behavior}</span>
+      </li>`
+    ).join('') +
+    `</ul>`;
+}
+
+function prosConsCardHtml(type) {
+  if (!type.strengths && !type.weaknesses) return '';
+  const strengths = (type.strengths || []).map(s => `<li>${s}</li>`).join('');
+  const weaknesses = (type.weaknesses || []).map(w => `<li>${w}</li>`).join('');
+  return `<h3>⚖️ 优势与短板</h3>` +
+    `<div class="pros-cons-grid">` +
+    `<div class="pros-section"><h4>✅ 优势</h4><ul class="pros-list">${strengths || '<li>暂无数据</li>'}</ul></div>` +
+    `<div class="cons-section"><h4>⚠️ 短板</h4><ul class="cons-list">${weaknesses || '<li>暂无数据</li>'}</ul></div>` +
+    `</div>`;
+}
+
+function growthCardHtml(type) {
+  if (!type.growthTips) return '';
+  return `<h3>🌱 成长建议</h3>` +
+    `<ul class="growth-list">` + type.growthTips.map(t => `<li>${t}</li>`).join('') + `</ul>`;
+}
+
+// 人格色深浅不一，按底色亮度自动选黑/白文字，保证徽章可读
+function relativeLuminance(hex) {
+  const m = /^#([0-9a-f]{6})$/i.exec(hex || '');
+  if (!m) return 0;
+  const int = parseInt(m[1], 16);
+  const chans = [(int >> 16) & 255, (int >> 8) & 255, int & 255]
+    .map(v => v / 255)
+    .map(c => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
+  return 0.2126 * chans[0] + 0.7152 * chans[1] + 0.0722 * chans[2];
+}
+
+function contrastRatio(a, b) {
+  const la = relativeLuminance(a);
+  const lb = relativeLuminance(b);
+  return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
+}
+
+function readableOn(hex) {
+  const lum = relativeLuminance(hex);
+  const contrastWhite = 1.05 / (lum + 0.05);
+  const contrastDark = (lum + 0.05) / (0.0116 + 0.05);
+  return contrastDark >= contrastWhite ? '#111827' : '#ffffff';
+}
+
+function mixHex(hex, towardWhite, ratio) {
+  const int = parseInt((hex || '#888888').slice(1), 16);
+  const target = towardWhite ? 255 : 0;
+  return '#' + [(int >> 16) & 255, (int >> 8) & 255, int & 255]
+    .map(v => Math.round(v + (target - v) * ratio).toString(16).padStart(2, '0'))
+    .join('');
+}
+
+// 品牌色直接当文字色在浅底上会不达标（如 #f59e0b 在白底仅 2.1:1），
+// 这里按底色深浅把颜色往黑/白方向推到满足对比度为止，用作文字专用的 ink 色
+function inkFor(hex, bg, min = 4.5) {
+  if (contrastRatio(hex, bg) >= min) return hex;
+  const towardWhite = relativeLuminance(bg) < 0.3;
+  for (let r = 0.1; r <= 1.0001; r += 0.02) {
+    const mixed = mixHex(hex, towardWhite, r);
+    if (contrastRatio(mixed, bg) >= min) return mixed;
+  }
+  return towardWhite ? '#ffffff' : '#000000';
+}
+
+// 主题无关地提供两套文字色，由 CSS 按当前主题挑选
+function typeInkVars(color) {
+  return `--ink-dark:${inkFor(color, '#181c22')};--ink-light:${inkFor(color, '#ffffff')}`;
+}
+
+function compatCardHtml(type) {
+  const comp = type.compatibility;
+  if (!comp) return '';
+  const badge = (code, kind) => {
+    const t = RESULT_TYPES[code];
+    const name = t ? t.name : code;
+    const color = t ? t.color : (kind === 'best' ? '#22c55e' : '#ef4444');
+    return `<button type="button" class="compat-badge compat-${kind}" style="background:${color};color:${readableOn(color)}" onclick="openType('${code}')">${name}</button>`;
+  };
+  const best = (comp.best || []).map(c => badge(c, 'best')).join('');
+  const challenging = (comp.challenging || []).map(c => badge(c, 'challenging')).join('');
+  return `<h3>🤝 职场兼容性</h3>` +
+    `<div class="compat-section">` +
+    `<div class="compat-group"><h4>💚 最佳搭档</h4><div class="compat-badges">${best || '<span class="compat-placeholder">暂无数据</span>'}</div></div>` +
+    `<div class="compat-group"><h4>🔴 需要磨合</h4><div class="compat-badges">${challenging || '<span class="compat-placeholder">暂无数据</span>'}</div></div>` +
+    `</div>`;
+}
+
 function renderStoredResult() {
   if (!lastResult) return;
-  const { primary, rankings, axisSides, axisScores, axisPercents, comboKey } = lastResult;
+  const { primary, rankings, axisSides, axisPercents, comboKey } = lastResult;
 
   document.getElementById('result-hero').innerHTML = `
     <div class="result-figure">
@@ -303,7 +475,7 @@ function renderStoredResult() {
       <div class="result-type-badge">${comboKey}</div>
     </div>
     <div class="result-hero-copy">
-      <div class="result-type-name">${primary.name}</div>
+      <div class="result-type-name" style="${typeInkVars(primary.color)}">${primary.name}</div>
       <div class="result-type-slogan">${primary.slogan}</div>
       <div class="confidence-badge">${primary.summary}</div>
       <div class="result-actions">
@@ -314,72 +486,11 @@ function renderStoredResult() {
     </div>
   `;
 
-  document.getElementById('result-desc').innerHTML = `
-    <h3>📝 人格画像</h3>
-    <div class="result-desc">${primary.desc}</div>
-    <div class="trait-tags">${primary.traits.map(t => `<span class="trait-tag">${t}</span>`).join('')}</div>
-    <div class="profile-block">
-      <div class="profile-lead">${primary.profile}</div>
-      <div class="profile-advice">${primary.advice}</div>
-    </div>
-  `;
-  // --- Workplace scenarios ---
-  const wpEl = document.getElementById('result-workplace');
-  if (wpEl && primary.workplace) {
-    const wp = primary.workplace;
-    wpEl.innerHTML = `<h3>🏢 职场行为模式</h3>` +
-      (wp.title ? `<div class="workplace-title">${wp.title}</div>` : '') +
-      `<ul class="workplace-list">` +
-      (wp.scenarios || []).map(s =>
-        `<li class="workplace-item">
-          <span class="workplace-situation">${s.situation}</span>
-          <span class="workplace-behavior">${s.behavior}</span>
-        </li>`
-      ).join('') +
-      `</ul>`;
-  }
-
-  // --- Strengths & Weaknesses ---
-  const pcEl = document.getElementById('result-pros-cons');
-  if (pcEl && (primary.strengths || primary.weaknesses)) {
-    const strengths = (primary.strengths || []).map(s => `<li>${s}</li>`).join('');
-    const weaknesses = (primary.weaknesses || []).map(w => `<li>${w}</li>`).join('');
-    pcEl.innerHTML = `<h3>⚖️ 优势与短板</h3>` +
-      `<div class="pros-cons-grid">` +
-      `<div class="pros-section"><h4>✅ 优势</h4><ul class="pros-list">${strengths || '<li>暂无数据</li>'}</ul></div>` +
-      `<div class="cons-section"><h4>⚠️ 短板</h4><ul class="cons-list">${weaknesses || '<li>暂无数据</li>'}</ul></div>` +
-      `</div>`;
-  }
-
-  // --- Growth tips ---
-  const gEl = document.getElementById('result-growth');
-  if (gEl && primary.growthTips) {
-    gEl.innerHTML = `<h3>🌱 成长建议</h3>` +
-      `<ul class="growth-list">` +
-      primary.growthTips.map(t => `<li>${t}</li>`).join('') +
-      `</ul>`;
-  }
-
-  // --- Compatibility ---
-  const cEl = document.getElementById('result-compat');
-  if (cEl && primary.compatibility) {
-    const comp = primary.compatibility;
-    const best = (comp.best || []).map(code => {
-      const t = RESULT_TYPES[code];
-      const name = t ? t.name : code;
-      return `<span class="compat-badge compat-best" style="background:${t ? t.color : '#22c55e'}">${name}</span>`;
-    }).join('');
-    const challenging = (comp.challenging || []).map(code => {
-      const t = RESULT_TYPES[code];
-      const name = t ? t.name : code;
-      return `<span class="compat-badge compat-challenging" style="background:${t ? t.color : '#ef4444'}">${name}</span>`;
-    }).join('');
-    cEl.innerHTML = `<h3>🤝 职场兼容性</h3>` +
-      `<div class="compat-section">` +
-      `<div class="compat-group"><h4>💚 最佳搭档</h4><div class="compat-badges">${best || '<span class="compat-placeholder">暂无数据</span>'}</div></div>` +
-      `<div class="compat-group"><h4>🔴 需要磨合</h4><div class="compat-badges">${challenging || '<span class="compat-placeholder">暂无数据</span>'}</div></div>` +
-      `</div>`;
-  }
+  document.getElementById('result-desc').innerHTML = profileCardHtml(primary);
+  document.getElementById('result-workplace').innerHTML = workplaceCardHtml(primary);
+  document.getElementById('result-pros-cons').innerHTML = prosConsCardHtml(primary);
+  document.getElementById('result-growth').innerHTML = growthCardHtml(primary);
+  document.getElementById('result-compat').innerHTML = compatCardHtml(primary);
 
   renderAxisBars(axisSides, axisPercents);
   renderRadarChart(axisPercents, primary.color);
@@ -391,15 +502,15 @@ function renderStoredResult() {
       .map(item => AXES[item.key].name.replace('轴', ''));
     const diffText = diffAxes.length === 1 ? `只差${diffAxes[0]}` : `差 ${diffAxes.length} 轴`;
     return `
-    <div class="rank-item rank-${i + 1}">
-      <span class="rank-badge" style="background:${t.color}">${i + 1}</span>
-      <img class="rank-image" src="${t.image}" alt="${t.name}" loading="lazy">
-      <div class="rank-info">
-        <span class="rank-name" style="color:${t.color}">${t.name}</span>
+    <button type="button" class="rank-item rank-${i + 1}" onclick="openType('${t.key}')">
+      <span class="rank-badge" style="background:${t.color};color:${readableOn(t.color)}" aria-hidden="true">${i + 1}</span>
+      <img class="rank-image" src="${t.image}" alt="" loading="lazy">
+      <span class="rank-info">
+        <span class="rank-name" style="${typeInkVars(t.color)}">${t.name}</span>
         <span class="rank-slogan">${t.slogan}</span>
-      </div>
+      </span>
       <span class="rank-pct">${diffText}</span>
-    </div>
+    </button>
   `;
   }).join('');
 
@@ -441,6 +552,9 @@ function renderRadarChart(scores, color) {
   canvas.height = sz * dpr;
   const ctx = canvas.getContext('2d');
   ctx.scale(dpr, dpr);
+  // 画布内容读屏不可见，用文字替代描述四轴取值
+  canvas.setAttribute('aria-label',
+    '四轴雷达图：' + AXIS_ORDER.map(k => `${AXES[k].name} ${scores[k] || 0}%`).join('，'));
   const cx = sz / 2, cy = sz / 2, R = sz * 0.36;
   const n = AXIS_ORDER.length, step = Math.PI * 2 / n;
   const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
@@ -524,16 +638,54 @@ function renderTypesGallery() {
   g.innerHTML = Object.values(RESULT_TYPES)
     .filter(item => item.key !== 'default')
     .map(t => `
-      <div class="type-card type-card-image" style="border-top:3px solid ${t.color}">
-        <div class="type-card-figure">
-          <img src="${t.image}" alt="${t.name}" loading="lazy">
-        </div>
-        <div class="name" style="color:${t.color}">${t.name}</div>
-        <div class="slogan">${t.slogan}</div>
-      </div>
+      <button type="button" class="type-card type-card-image" style="border-top:3px solid ${t.color};${typeInkVars(t.color)}" onclick="openType('${t.key}')">
+        <span class="type-card-figure">
+          <img src="${t.image}" alt="" loading="lazy">
+        </span>
+        <span class="name" style="${typeInkVars(t.color)}">${t.name}</span>
+        <span class="slogan">${t.slogan}</span>
+      </button>
     `).join('');
   updateTypesDrawer();
   measureDrawerHeight();
+}
+
+// 人格详情页（#/type/CODE）：与结果页共用同一套区块
+function renderTypePage(code) {
+  const type = RESULT_TYPES[code];
+  const el = document.getElementById('type-detail');
+  if (!type || !el) return;
+  document.title = `${type.name} · NMTI 牛马人格测试`;
+
+  const cards = [
+    profileCardHtml(type),
+    workplaceCardHtml(type),
+    prosConsCardHtml(type),
+  ].filter(Boolean).map(html => `<div class="result-card">${html}</div>`).join('');
+
+  const sideCards = [growthCardHtml(type), compatCardHtml(type)].filter(Boolean);
+
+  el.innerHTML = `
+    <div class="result-hero">
+      <div class="result-figure">
+        <img class="result-figure-img" src="${type.image}" alt="${type.name}">
+        <div class="result-type-badge">${code}</div>
+      </div>
+      <div class="result-hero-copy">
+        <div class="result-type-name" style="${typeInkVars(type.color)}">${type.name}</div>
+        <div class="result-type-slogan">${type.slogan}</div>
+        <div class="confidence-badge">${type.summary}</div>
+        <div class="result-actions">
+          <button class="share-btn primary" onclick="startTest()">测测我是哪种</button>
+          <button class="share-btn" onclick="goHome()">回到主页</button>
+        </div>
+      </div>
+    </div>
+    ${cards}
+    ${sideCards.length ? `<div class="result-row"${sideCards.length === 1 ? ' style="grid-template-columns:1fr"' : ''}>${
+      sideCards.map(html => `<div class="result-card">${html}</div>`).join('')
+    }</div>` : ''}
+  `;
 }
 
 // 折叠高度取「前两行卡片的真实底部边界」，逐卡测量避免行高不均导致第二行被裁
@@ -554,6 +706,24 @@ function measureDrawerHeight() {
   const rowBottom = Math.max(...rects.filter(r => Math.round(r.top) === secondRowTop).map(r => r.bottom));
   const h = rowBottom - rects[0].top + 2;
   drawer.style.setProperty('--collapsed-h', `${Math.round(h)}px`);
+  syncDrawerFocusability();
+}
+
+// 折叠状态下，被裁掉的卡片不能进入 Tab 序（否则焦点会跑到看不见的位置）
+function syncDrawerFocusability() {
+  const drawer = document.getElementById('types-drawer');
+  const grid = document.getElementById('types-grid');
+  if (!drawer || !grid || !drawer.getBoundingClientRect().height) return;
+  const limit = drawer.getBoundingClientRect().bottom;
+  Array.from(grid.children).forEach(card => {
+    const hidden = card.getBoundingClientRect().bottom > limit + 2;
+    if (hidden) card.setAttribute('inert', '');
+    else card.removeAttribute('inert');
+  });
+}
+
+function clearDrawerInert() {
+  document.querySelectorAll('#types-grid > *').forEach(card => card.removeAttribute('inert'));
 }
 
 function updateTypesDrawer() {
@@ -569,13 +739,202 @@ function updateTypesDrawer() {
 function toggleTypesDrawer() {
   typesDrawerExpanded = !typesDrawerExpanded;
   updateTypesDrawer();
+  if (typesDrawerExpanded) clearDrawerInert();
+  else setTimeout(syncDrawerFocusability, 400); // 等 max-height 过渡结束再判定可见性
 }
 
-function shareResult() {
-  const text = window._shareText || 'NMTI 测评';
-  if (navigator.share) navigator.share({ title: 'NMTI 4轴组合版', text, url: location.href });
-  else if (navigator.clipboard) navigator.clipboard.writeText(text + '\n' + location.href).then(() => showToast('已复制'));
-  else showToast('复制失败，请手动分享');
+// ============================================
+// 分享海报（1080×1440）
+// ============================================
+const POSTER_W = 1080;
+const POSTER_H = 1440;
+const FONT_STACK = '-apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif';
+
+function withAlpha(hex, alpha) {
+  const m = /^#([0-9a-f]{6})$/i.exec(hex || '');
+  if (!m) return `rgba(245,158,11,${alpha})`;
+  const int = parseInt(m[1], 16);
+  return `rgba(${(int >> 16) & 255},${(int >> 8) & 255},${int & 255},${alpha})`;
+}
+
+function roundRectPath(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+function loadImage(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const timer = setTimeout(() => reject(new Error('image timeout')), 4000);
+    img.onload = () => { clearTimeout(timer); resolve(img); };
+    img.onerror = () => { clearTimeout(timer); reject(new Error('image error')); };
+    img.src = src;
+  });
+}
+
+async function buildPoster(result) {
+  const { primary, axisPercents, comboKey } = result;
+  const color = primary.color || '#f59e0b';
+  const W = POSTER_W, H = POSTER_H;
+  const canvas = document.createElement('canvas');
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext('2d');
+
+  // 背景：深色底 + 人格色光晕
+  ctx.fillStyle = '#0d0f12';
+  ctx.fillRect(0, 0, W, H);
+  let g = ctx.createRadialGradient(W * 0.18, H * 0.1, 0, W * 0.18, H * 0.1, W * 0.95);
+  g.addColorStop(0, withAlpha(color, 0.34));
+  g.addColorStop(1, withAlpha(color, 0));
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, H);
+  g = ctx.createRadialGradient(W * 0.92, 0, 0, W * 0.92, 0, W * 0.75);
+  g.addColorStop(0, 'rgba(14,165,233,0.22)');
+  g.addColorStop(1, 'rgba(14,165,233,0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, H);
+
+  // 顶部标识
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = withAlpha(color, 0.95);
+  ctx.font = `800 26px ${FONT_STACK}`;
+  ctx.fillText('NMTI · 牛马人格测试', 80, 96);
+
+  // 人格立绘
+  const artW = 400, artH = 533, artX = (W - artW) / 2, artY = 148;
+  try {
+    const img = await loadImage(primary.image);
+    ctx.save();
+    roundRectPath(ctx, artX, artY, artW, artH, 30);
+    ctx.clip();
+    ctx.drawImage(img, artX, artY, artW, artH);
+    ctx.restore();
+    ctx.strokeStyle = 'rgba(255,255,255,0.14)';
+    ctx.lineWidth = 2;
+    roundRectPath(ctx, artX, artY, artW, artH, 30);
+    ctx.stroke();
+  } catch (_) { /* 图片缺失时留空，不影响其余排版 */ }
+
+  // 类型编码
+  ctx.font = `800 24px ${FONT_STACK}`;
+  const codeW = ctx.measureText(comboKey).width + 44;
+  ctx.fillStyle = 'rgba(13,15,18,0.82)';
+  roundRectPath(ctx, artX + 24, artY + artH - 72, codeW, 48, 24);
+  ctx.fill();
+  ctx.fillStyle = withAlpha(color, 1);
+  ctx.textAlign = 'center';
+  ctx.fillText(comboKey, artX + 24 + codeW / 2, artY + artH - 39);
+
+  // 类型名与口号
+  ctx.textAlign = 'center';
+  ctx.fillStyle = color;
+  ctx.font = `900 88px ${FONT_STACK}`;
+  ctx.fillText(primary.name, W / 2, 786);
+  ctx.fillStyle = '#9aa5b1';
+  ctx.font = `400 30px ${FONT_STACK}`;
+  ctx.fillText(primary.slogan, W / 2, 840);
+
+  // 四轴刻度
+  const barY = 944, rowH = 82, barX = 280, barW = 470;
+  AXIS_ORDER.forEach((axisKey, i) => {
+    const axis = AXES[axisKey];
+    const pct = axisPercents[axisKey] || 0;
+    const y = barY + i * rowH;
+    const side = pct >= 50 ? axis.positive : axis.negative;
+
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#9aa5b1';
+    ctx.font = `700 24px ${FONT_STACK}`;
+    ctx.fillText(axis.name.replace('轴', ''), 96, y + 9);
+
+    ctx.fillStyle = 'rgba(255,255,255,0.12)';
+    roundRectPath(ctx, barX, y - 4, barW, 8, 4);
+    ctx.fill();
+
+    const mx = barX + (barW - 26) * (pct / 100) + 13;
+    ctx.fillStyle = withAlpha(color, 1);
+    ctx.beginPath();
+    ctx.arc(mx, y, 11, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#0d0f12';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+
+    ctx.textAlign = 'right';
+    ctx.fillStyle = '#e2e8f0';
+    ctx.font = `800 24px ${FONT_STACK}`;
+    ctx.fillText(`${side.label} ${pct}%`, W - 96, y + 9);
+  });
+
+  // 页脚
+  ctx.textAlign = 'center';
+  ctx.fillStyle = 'rgba(255,255,255,0.34)';
+  ctx.font = `600 24px ${FONT_STACK}`;
+  ctx.fillText('4 轴 · 16 型 · 30 题', W / 2, 1316);
+  ctx.fillStyle = withAlpha(color, 0.9);
+  ctx.font = `800 26px ${FONT_STACK}`;
+  ctx.fillText('caiheee.github.io/NMTI', W / 2, 1362);
+
+  return canvas;
+}
+
+function canvasToBlob(canvas) {
+  return new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+}
+
+async function shareResult() {
+  if (!lastResult) return;
+  showToast('正在生成分享图…');
+  let canvas;
+  try {
+    canvas = await buildPoster(lastResult);
+  } catch (_) {
+    canvas = null;
+  }
+
+  const text = window._shareText || 'NMTI 牛马人格测试';
+
+  if (!canvas) {
+    if (navigator.clipboard) navigator.clipboard.writeText(`${text}\n${location.href}`).then(() => showToast('已复制'));
+    else showToast('生成图片失败');
+    return;
+  }
+
+  const blob = await canvasToBlob(canvas);
+  if (!blob) {
+    showToast('生成图片失败');
+    return;
+  }
+  const filename = `NMTI-${lastResult.comboKey}-${lastResult.primary.name}.png`;
+  const file = new File([blob], filename, { type: 'image/png' });
+  // 触屏设备走系统分享面板；桌面端直接下载，避免唤起意料之外的分享窗
+  const preferShareSheet = window.matchMedia('(pointer: coarse)').matches;
+
+  if (preferShareSheet && navigator.canShare && navigator.canShare({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file], title: 'NMTI 牛马人格测试', text });
+      return;
+    } catch (err) {
+      if (err && err.name === 'AbortError') return;
+    }
+  }
+
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+  showToast('分享图已保存');
 }
 
 function showToast(msg) {
@@ -588,7 +947,8 @@ function showToast(msg) {
   }
   t.textContent = msg;
   t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2400);
+  clearTimeout(showToast.timer);
+  showToast.timer = setTimeout(() => t.classList.remove('show'), 2400);
 }
 
 document.addEventListener('keydown', e => {
