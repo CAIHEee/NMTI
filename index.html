@@ -10,10 +10,28 @@
   <meta property="og:title" content="NMTI 牛马人格测试">
   <meta property="og:description" content="4轴组合，16种人格，30道职场情境题，测测你是哪种牛马。">
   <meta property="og:type" content="website">
-  <link rel="stylesheet" href="css/style.css?v=1779377061">
+  <meta property="og:url" content="https://caiheee.github.io/NMTI/">
+  <meta property="og:image" content="https://caiheee.github.io/NMTI/img/og.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="img/favicon-32.png" sizes="32x32">
+  <link rel="apple-touch-icon" href="img/favicon-128.png">
+  <script>
+    (function () {
+      var t = null;
+      try { t = localStorage.getItem('nmti-theme'); } catch (e) {}
+      if (!t) t = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
+  <link rel="stylesheet" href="css/style.css?v=1779377062">
 </head>
 <body>
-  <button id="theme-toggle" onclick="toggleTheme()" aria-label="切换主题">☀️</button>
+  <button id="theme-toggle" onclick="toggleTheme()" aria-label="切换主题">
+    <svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a6.8 6.8 0 0 0 9.8 9.8Z"/></svg>
+    <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.6v2.2M12 19.2v2.2M4.2 12H2M22 12h-2.2M5.6 5.6l1.6 1.6M16.8 16.8l1.6 1.6M18.4 5.6l-1.6 1.6M7.2 16.8l-1.6 1.6"/></svg>
+  </button>
 
   <div id="loading" class="loading-overlay hidden">
     <div class="loading-spinner"><img src="img/raw.webp" alt="" style="width:60px;height:60px;border-radius:50%;object-fit:cover;"></div>
@@ -28,8 +46,6 @@
           <div class="landing-icon"><img src="img/raw.webp" alt="NMTI" style="width:80px;height:80px;border-radius:50%;object-fit:cover;"></div>
           <div class="hero-kicker">NMTI · 牛马人格测试</div>
           <h1 id="landing-title">牛马人格测试</h1>
-          <!-- <div class="subtitle">从单一维度升级为四轴组合，得到更完整、更像 MBTI 的人格结果。</div> -->
-          <div class="tagline">4轴 / 16型 / 30题</div>
           <div class="hero-actions">
             <button class="btn-primary" onclick="startTest()">开始测试</button>
             <button class="btn-secondary" onclick="scrollToTypes()">查看类型</button>
@@ -42,25 +58,34 @@
           </div>
         </div>
         <div class="hero-side">
-          <div class="hero-side-head">
-            <h2>测试说明</h2>
-            <p class="section-desc">四个轴分别衡量投入、生存、信念和表达风格。</p>
-          </div>
-          <div class="method-grid">
-            <div class="info-card">
-              <h3>四个轴</h3>
-              <p><strong>投入轴</strong> — 卷型 / 躺型</p>
-              <p><strong>生存轴</strong> — 工型 / 鱼型</p>
-              <p><strong>信念轴</strong> — 饼型 / 醒型</p>
-              <p><strong>表达轴</strong> — 锅型 / 嘴型</p>
-            </div>
-            <div class="info-card">
-              <h3>评测机制</h3>
-              <p>📝 30道情境题</p>
-              <p>📊 每题 4 个选项，正负权重分明</p>
-              <p>🎯 四轴组合出 16 种人格</p>
-              <p>💡 相近人格 Top3 自动排序</p>
-            </div>
+          <div class="axis-panel">
+            <h2>四个轴</h2>
+            <ul class="axis-list">
+              <li class="axis-row">
+                <span class="axis-key">🔥 投入</span>
+                <span class="axis-pole">卷型</span>
+                <span class="axis-bar" aria-hidden="true"></span>
+                <span class="axis-pole axis-pole-end">躺型</span>
+              </li>
+              <li class="axis-row">
+                <span class="axis-key">🧰 生存</span>
+                <span class="axis-pole">工型</span>
+                <span class="axis-bar" aria-hidden="true"></span>
+                <span class="axis-pole axis-pole-end">鱼型</span>
+              </li>
+              <li class="axis-row">
+                <span class="axis-key">🥞 信念</span>
+                <span class="axis-pole">饼型</span>
+                <span class="axis-bar" aria-hidden="true"></span>
+                <span class="axis-pole axis-pole-end">醒型</span>
+              </li>
+              <li class="axis-row">
+                <span class="axis-key">🗣️ 表达</span>
+                <span class="axis-pole">锅型</span>
+                <span class="axis-bar" aria-hidden="true"></span>
+                <span class="axis-pole axis-pole-end">嘴型</span>
+              </li>
+            </ul>
           </div>
         </div>
       </section>
@@ -84,14 +109,13 @@
     <div class="page-topbar">
       <button type="button" class="topbar-btn" onclick="goHome()">主页</button>
       <div class="topbar-title">
-        <strong>答题页面</strong>
-        <span>选择更像你的反应</span>
+        <strong>答题</strong>
       </div>
+      <span id="progress-count" class="topbar-count" aria-live="polite"></span>
     </div>
     <div class="progress-bar">
       <div id="progress-fill" class="progress-fill" style="width:0%"></div>
     </div>
-    <div id="progress-text" class="progress-text"></div>
     <div id="test-content"></div>
   </div>
 
@@ -99,17 +123,17 @@
     <div class="page-topbar">
       <button type="button" class="topbar-btn" onclick="goHome()">主页</button>
       <div class="topbar-title">
-        <strong>评估页面</strong>
-        <span>四轴组合结果</span>
+        <strong>评估结果</strong>
       </div>
     </div>
     <div id="result-hero" class="result-hero"></div>
-    <div id="result-desc" class="result-card"><h3>📝 人格画像</h3></div>
-    <div id="result-advice" class="result-card"><h3>💡 职场画像</h3></div>
-    <div id="result-workplace" class="result-card"><h3>🏢 职场行为模式</h3></div>
+    <div id="result-desc" class="result-card"></div>
+    <div id="result-workplace" class="result-card"></div>
     <div id="result-pros-cons" class="result-card"></div>
-    <div id="result-growth" class="result-card"><h3>🌱 成长建议</h3></div>
-    <div id="result-compat" class="result-card"><h3>🤝 职场兼容性</h3></div>
+    <div class="result-row">
+      <div id="result-growth" class="result-card"></div>
+      <div id="result-compat" class="result-card"></div>
+    </div>
     <div class="result-grid">
       <div class="result-card">
         <h3>📊 四轴雷达图</h3>
@@ -126,7 +150,7 @@
     </div>
   </div>
 
-  <script src="js/data.js?v=1779377061"></script>
-  <script src="js/app.js?v=1779377061"></script>
+  <script src="js/data.js?v=1779377062"></script>
+  <script src="js/app.js?v=1779377062"></script>
 </body>
 </html>

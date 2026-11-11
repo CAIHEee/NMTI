@@ -19,11 +19,13 @@
 
 ## 在线体验
 
-🔗 [点击测试](https://nmti.vercel.app)
+🔗 [caiheee.github.io/NMTI](https://caiheee.github.io/NMTI/)
+
+推送到 `master` 会自动通过 GitHub Actions 部署到 GitHub Pages。
 
 ## 技术栈
 
-- 纯前端（HTML + CSS + JS），零依赖
+- 纯前端（HTML + CSS + JS），零依赖、零构建
 - 响应式设计，支持手机端
 - WebP 图片优化
 - 暗色/亮色主题切换
@@ -31,8 +33,9 @@
 ## 本地启动
 
 ```bash
+python3 server.py        # http://localhost:9527 ，带 no-cache
+# 或
 python3 -m http.server 9527
-# 打开 http://localhost:9527
 ```
 
 ## License

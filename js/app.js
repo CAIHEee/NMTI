@@ -7,6 +7,14 @@ let answers = {};
 let lastResult = null;
 let appBooted = false;
 let typesDrawerExpanded = false;
+let advanceTimer = null;
+
+function clearAdvance() {
+  if (advanceTimer) {
+    clearTimeout(advanceTimer);
+    advanceTimer = null;
+  }
+}
 
 function boot() {
   if (appBooted) return;
@@ -29,8 +37,10 @@ function initTheme() {
 function setTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);
   localStorage.setItem('nmti-theme', theme);
-  const btn = document.getElementById('theme-toggle');
-  if (btn) btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+  // 雷达图的网格/标签颜色在绘制时烘焙，切换主题后需要重绘
+  if (lastResult && document.getElementById('page-result')?.classList.contains('active')) {
+    renderRadarChart(lastResult.axisPercents, lastResult.primary?.color || '#f59e0b');
+  }
 }
 
 function toggleTheme() {
@@ -55,6 +65,7 @@ function showPage(name) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
   const tb = document.getElementById('theme-toggle');
   if (tb) tb.style.display = name === 'test' ? 'none' : '';
+  if (name === 'landing') requestAnimationFrame(measureDrawerHeight);
 }
 
 function getRoute() {
@@ -70,6 +81,7 @@ function navigateTo(route) {
 }
 
 function handleRoute() {
+  clearAdvance();
   const route = getRoute();
   if (route === 'test') {
     showPage('test');
@@ -106,6 +118,7 @@ function scrollToTypes() {
 }
 
 function startTest() {
+  clearAdvance();
   currentQuestion = 0;
   answers = {};
   lastResult = null;
@@ -116,14 +129,24 @@ function renderQuestion() {
   const q = QUESTIONS[currentQuestion];
   if (!q) return;
   const total = QUESTIONS.length;
-  document.getElementById('progress-fill').style.width = `${(currentQuestion / total) * 100}%`;
-  document.getElementById('progress-text').textContent = `第 ${currentQuestion + 1} 题 / 共 ${total} 题`;
   const letters = ['A', 'B', 'C', 'D'];
   const sel = answers[q.id];
   const isLast = currentQuestion === total - 1;
+  const answered = sel === undefined ? 0 : 1;
+  document.getElementById('progress-fill').style.width = `${((currentQuestion + answered) / total) * 100}%`;
+  const counter = document.getElementById('progress-count');
+  if (counter) counter.textContent = `${currentQuestion + 1} / ${total}`;
+
+  const navHtml = isLast
+    ? `<div class="nav-buttons">
+        ${currentQuestion > 0 ? '<button class="nav-btn prev" onclick="prevQuestion()">← 上一题</button>' : ''}
+        <button class="nav-btn next" onclick="calculateResult()" ${sel === undefined ? 'disabled' : ''}>查看结果 🎉</button>
+      </div>`
+    : (currentQuestion > 0
+      ? `<div class="nav-inline"><button class="nav-back" onclick="prevQuestion()">← 上一题</button></div>`
+      : '');
 
   const html = `<div class="question-card">
-    <div class="question-num">第 ${currentQuestion + 1} 题 / 共 ${total} 题</div>
     <div class="question-text">${q.text}</div>
     <div class="options">
       ${q.options.map((o, i) => `
@@ -132,13 +155,7 @@ function renderQuestion() {
         </button>`).join('')}
     </div>
   </div>
-  <div class="nav-buttons">
-    ${currentQuestion > 0 ? '<button class="nav-btn prev" onclick="prevQuestion()">← 上一题</button>' : '<div></div>'}
-    ${isLast
-      ? '<button class="nav-btn next" onclick="calculateResult()" ' + (sel === undefined ? 'disabled' : '') + '>查看结果 🎉</button>'
-      : '<div class="auto-hint">选择后自动跳转</div>'
-    }
-  </div>
+  ${navHtml}
   <div class="swipe-hint" id="swipe-hint">← 左右滑动翻页 →</div>`;
 
   document.getElementById('test-content').innerHTML = html;
@@ -148,13 +165,15 @@ function renderQuestion() {
 }
 
 function selectOption(qid, oid) {
+  clearAdvance();
   answers[qid] = oid;
   renderQuestion();
   // Auto-advance after selection (except last question)
   const total = QUESTIONS.length;
   const isLast = currentQuestion === total - 1;
   if (!isLast) {
-    setTimeout(() => {
+    advanceTimer = setTimeout(() => {
+      advanceTimer = null;
       currentQuestion++;
       renderQuestion();
     }, 280);
@@ -162,6 +181,7 @@ function selectOption(qid, oid) {
 }
 
 function prevQuestion() {
+  clearAdvance();
   if (currentQuestion > 0) {
     currentQuestion--;
     renderQuestion();
@@ -169,6 +189,7 @@ function prevQuestion() {
 }
 
 function nextQuestion() {
+  clearAdvance();
   if (answers[QUESTIONS[currentQuestion].id] === undefined) return;
   if (currentQuestion < QUESTIONS.length - 1) {
     currentQuestion++;
@@ -248,29 +269,27 @@ function getRankings(comboKey, axisPercents) {
   const currentCodes = comboKey.split('');
   // 每个极性的理论中心：负极15%，正极85%
   const CENTER = { negative: 15, positive: 85 };
-  const MAX_EUCLID = Math.sqrt(4 * 70 * 70); // 4轴 × 70² 最大距离
+  const MAX_AXIS_DIST = 70; // 单个轴离理论中心的最远距离
 
   return Object.entries(RESULT_TYPES)
     .filter(([key]) => key !== 'default' && key !== comboKey)
     .map(([key, profile]) => {
       const codes = key.split('');
-      let sumSq = 0;
+      let distSum = 0;
       let hamming = 0;
       for (let i = 0; i < codes.length; i++) {
         const axisKey = AXIS_ORDER[i];
         const axis = AXES[axisKey];
         const isPositive = codes[i] === axis.positive.code;
         const typeCenter = isPositive ? CENTER.positive : CENTER.negative;
-        const actualPct = axisPercents[axisKey];
-        const axisDist = Math.abs(actualPct - typeCenter);
-        sumSq += axisDist * axisDist;
+        distSum += Math.abs(axisPercents[axisKey] - typeCenter);
         if (codes[i] !== currentCodes[i]) hamming++;
       }
-      const euclid = Math.sqrt(sumSq);
-      const similarity = Math.max(0, Math.min(99, Math.round((1 - euclid / MAX_EUCLID) * 100)));
+      // 平均轴距离 → 连续相似度，避免多个人格被四舍五入到同一档
+      const similarity = Math.max(1, Math.min(99, Math.round((1 - distSum / codes.length / MAX_AXIS_DIST) * 100)));
       return { ...profile, key, similarity, hamming };
     })
-    .sort((a, b) => b.similarity - a.similarity)
+    .sort((a, b) => a.hamming - b.hamming || b.similarity - a.similarity)
     .slice(0, 3);
 }
 
@@ -286,9 +305,9 @@ function renderStoredResult() {
     <div class="result-hero-copy">
       <div class="result-type-name">${primary.name}</div>
       <div class="result-type-slogan">${primary.slogan}</div>
-      <div class="confidence-badge">组合命中 · ${primary.summary}</div>
+      <div class="confidence-badge">${primary.summary}</div>
       <div class="result-actions">
-        <button class="share-btn primary" onclick="shareResult()">复制分享</button>
+        <button class="share-btn primary" onclick="shareResult()">分享结果</button>
         <button class="share-btn" onclick="startTest()">重新测试</button>
         <button class="share-btn" onclick="goHome()">回到主页</button>
       </div>
@@ -296,13 +315,13 @@ function renderStoredResult() {
   `;
 
   document.getElementById('result-desc').innerHTML = `
+    <h3>📝 人格画像</h3>
     <div class="result-desc">${primary.desc}</div>
     <div class="trait-tags">${primary.traits.map(t => `<span class="trait-tag">${t}</span>`).join('')}</div>
-    <div class="mbti-ref">💡 ${primary.advice}</div>
-  `;
-
-  document.getElementById('result-advice').innerHTML = `
-    <div class="advice-box">💡 职场画像：${primary.profile}</div>
+    <div class="profile-block">
+      <div class="profile-lead">${primary.profile}</div>
+      <div class="profile-advice">${primary.advice}</div>
+    </div>
   `;
   // --- Workplace scenarios ---
   const wpEl = document.getElementById('result-workplace');
@@ -362,10 +381,16 @@ function renderStoredResult() {
       `</div>`;
   }
 
-  renderAxisBars(axisSides, axisScores, axisPercents);
+  renderAxisBars(axisSides, axisPercents);
   renderRadarChart(axisPercents, primary.color);
 
-  document.getElementById('combo-type').innerHTML = rankings.map((t, i) => `
+  document.getElementById('combo-type').innerHTML = rankings.map((t, i) => {
+    const diffAxes = AXIS_ORDER
+      .map((axisKey, idx) => ({ key: axisKey, same: t.key[idx] === comboKey[idx] }))
+      .filter(item => !item.same)
+      .map(item => AXES[item.key].name.replace('轴', ''));
+    const diffText = diffAxes.length === 1 ? `只差${diffAxes[0]}` : `差 ${diffAxes.length} 轴`;
+    return `
     <div class="rank-item rank-${i + 1}">
       <span class="rank-badge" style="background:${t.color}">${i + 1}</span>
       <img class="rank-image" src="${t.image}" alt="${t.name}" loading="lazy">
@@ -373,27 +398,32 @@ function renderStoredResult() {
         <span class="rank-name" style="color:${t.color}">${t.name}</span>
         <span class="rank-slogan">${t.slogan}</span>
       </div>
-      <span class="rank-pct">${t.similarity}%</span>
+      <span class="rank-pct">${diffText}</span>
     </div>
-  `).join('');
+  `;
+  }).join('');
 
   window._shareText = `我在 NMTI 测出「${primary.name}」：${primary.slogan}\n四轴组合：${comboKey}\n${primary.summary}`;
 }
 
-function renderAxisBars(axisSides, axisScores, axisPercents) {
-  const levelColor = { negative: '#f59e0b', positive: '#3b82f6' };
+function renderAxisBars(axisSides, axisPercents) {
   const html = AXIS_ORDER.map(axisKey => {
     const axis = AXES[axisKey];
     const side = axisSides[axisKey];
     const pct = axisPercents[axisKey];
+    const isPositive = side === axis.positive;
     return `<div class="dim-group">
-      <div class="dim-group-title">${axis.icon} ${axis.name}</div>
-      <div class="dim-bar">
-        <span class="dim-label">${side.short}型</span>
-        <div class="dim-track"><div class="dim-fill" style="width:${pct}%;background:${levelColor[side === axis.positive ? 'positive' : 'negative']}"></div></div>
+      <div class="dim-head">
+        <span class="dim-group-title">${axis.icon} ${axis.name}</span>
         <span class="dim-value">${pct}%</span>
       </div>
-      <div class="axis-note">${axis.negative.label} / ${axis.positive.label}</div>
+      <div class="dim-scale">
+        <span class="dim-end ${isPositive ? '' : 'is-active'}">${axis.negative.label}</span>
+        <div class="dim-track">
+          <div class="dim-marker ${isPositive ? 'is-positive' : 'is-negative'}" style="left:clamp(7px, ${pct}%, calc(100% - 7px))"></div>
+        </div>
+        <span class="dim-end ${isPositive ? 'is-active' : ''}">${axis.positive.label}</span>
+      </div>
     </div>`;
   }).join('');
 
@@ -411,16 +441,16 @@ function renderRadarChart(scores, color) {
   canvas.height = sz * dpr;
   const ctx = canvas.getContext('2d');
   ctx.scale(dpr, dpr);
-  const cx = sz / 2, cy = sz / 2, R = sz * 0.34;
+  const cx = sz / 2, cy = sz / 2, R = sz * 0.36;
   const n = AXIS_ORDER.length, step = Math.PI * 2 / n;
   const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
-  const gc = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
-  const ac = isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)';
-  const lc = isDark ? '#94a3b8' : '#64748b';
+  const gc = isDark ? 'rgba(255,255,255,0.09)' : 'rgba(15,23,42,0.09)';
+  const ac = isDark ? 'rgba(255,255,255,0.13)' : 'rgba(15,23,42,0.13)';
+  const lc = isDark ? '#a7b2bf' : '#5b6675';
 
   ctx.clearRect(0, 0, sz, sz);
-  for (let lv = 1; lv <= 5; lv++) {
-    const r = (R / 5) * lv;
+  for (let lv = 1; lv <= 4; lv++) {
+    const r = (R / 4) * lv;
     ctx.beginPath();
     for (let i = 0; i <= n; i++) {
       const a = i * step - Math.PI / 2;
@@ -441,32 +471,51 @@ function renderRadarChart(scores, color) {
     ctx.stroke();
   });
 
-  ctx.font = `${Math.max(10, sz * 0.03)}px -apple-system, "PingFang SC", sans-serif`;
+  ctx.font = `700 ${Math.max(11, Math.round(sz * 0.036))}px -apple-system, "PingFang SC", sans-serif`;
   ctx.fillStyle = lc;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   AXIS_ORDER.forEach((axisKey, i) => {
     const axis = AXES[axisKey];
     const a = i * step - Math.PI / 2;
-    const lr = R + sz * 0.06;
-    ctx.fillText(axis.name, cx + lr * Math.cos(a), cy + lr * Math.sin(a));
+    const lr = R + sz * 0.072;
+    const lx = cx + lr * Math.cos(a);
+    const ly = cy + lr * Math.sin(a);
+    const cos = Math.cos(a);
+    // 左右两侧的标签向内对齐，避免被画布边缘裁掉
+    ctx.textAlign = cos > 0.3 ? 'left' : (cos < -0.3 ? 'right' : 'center');
+    ctx.fillText(`${axis.icon} ${axis.name.replace('轴', '')}`, lx, ly);
+  });
+  ctx.textAlign = 'center';
+
+  const pts = AXIS_ORDER.map((axisKey, i) => {
+    const a = i * step - Math.PI / 2;
+    const v = (scores[axisKey] || 0) / 100;
+    return [cx + R * v * Math.cos(a), cy + R * v * Math.sin(a)];
   });
 
   ctx.beginPath();
-  AXIS_ORDER.forEach((axisKey, i) => {
-    const a = i * step - Math.PI / 2;
-    const v = (scores[axisKey] || 0) / 100;
-    const px = cx + R * v * Math.cos(a);
-    const py = cy + R * v * Math.sin(a);
-    if (i === 0) ctx.moveTo(px, py);
-    else ctx.lineTo(px, py);
-  });
+  pts.forEach(([px, py], i) => (i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py)));
   ctx.closePath();
-  ctx.fillStyle = color + '33';
+  const grad = ctx.createLinearGradient(cx - R, cy - R, cx + R, cy + R);
+  grad.addColorStop(0, color + '55');
+  grad.addColorStop(1, color + '22');
+  ctx.fillStyle = grad;
   ctx.fill();
   ctx.strokeStyle = color;
   ctx.lineWidth = 2;
+  ctx.lineJoin = 'round';
   ctx.stroke();
+
+  pts.forEach(([px, py]) => {
+    ctx.beginPath();
+    ctx.arc(px, py, 3.4, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.strokeStyle = isDark ? 'rgba(13,15,18,0.9)' : '#fff';
+    ctx.lineWidth = 1.6;
+    ctx.stroke();
+  });
 }
 
 function renderTypesGallery() {
@@ -484,6 +533,27 @@ function renderTypesGallery() {
       </div>
     `).join('');
   updateTypesDrawer();
+  measureDrawerHeight();
+}
+
+// 折叠高度取「前两行卡片的真实底部边界」，逐卡测量避免行高不均导致第二行被裁
+function measureDrawerHeight() {
+  const drawer = document.getElementById('types-drawer');
+  const grid = document.getElementById('types-grid');
+  if (!drawer || !grid) return;
+  const cards = Array.from(grid.children);
+  if (!cards.length) return;
+  const rects = cards.map(card => card.getBoundingClientRect());
+  if (!rects[0].height) return; // 页面不可见时测不到，保留上一次的值
+  const tops = [...new Set(rects.map(r => Math.round(r.top)))].sort((a, b) => a - b);
+  if (tops.length < 2) {
+    drawer.style.removeProperty('--collapsed-h');
+    return;
+  }
+  const secondRowTop = tops[1];
+  const rowBottom = Math.max(...rects.filter(r => Math.round(r.top) === secondRowTop).map(r => r.bottom));
+  const h = rowBottom - rects[0].top + 2;
+  drawer.style.setProperty('--collapsed-h', `${Math.round(h)}px`);
 }
 
 function updateTypesDrawer() {
@@ -521,13 +591,11 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 2400);
 }
 
-function calcCombinationCount() {
-  return 16;
-}
-
 document.addEventListener('keydown', e => {
+  if (e.metaKey || e.ctrlKey || e.altKey || e.repeat) return;
   if (!document.getElementById('page-test')?.classList.contains('active')) return;
-  if (e.key === 'ArrowLeft' || e.key === 'a') prevQuestion();
+  if (e.key === 'ArrowLeft') prevQuestion();
+  if (e.key === 'ArrowRight') nextQuestion();
   if (['1', '2', '3', '4'].includes(e.key)) {
     const b = document.querySelectorAll('.option-btn');
     if (b[+e.key - 1]) b[+e.key - 1].click();
@@ -538,6 +606,7 @@ let rt;
 window.addEventListener('resize', () => {
   clearTimeout(rt);
   rt = setTimeout(() => {
+    measureDrawerHeight();
     if (!document.getElementById('page-result')?.classList.contains('active')) return;
     if (lastResult) renderRadarChart(lastResult.axisPercents, lastResult.primary?.color || '#f59e0b');
   }, 200);
